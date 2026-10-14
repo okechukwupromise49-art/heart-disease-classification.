@@ -1,509 +1,971 @@
+
 import streamlit as st
 import pandas as pd
 import joblib
+
 from pathlib import Path
 
-# --------------------------------------------------
-# 1. Page configuration
-# --------------------------------------------------
+# =========================================================
+# 1. PAGE CONFIGURATION
+# =========================================================
+
 st.set_page_config(
-    page_title="HeartGuard AI | Clinical Decision Support",
+    page_title="CardioSense AI | Heart Disease Classification",
     page_icon="❤️",
     layout="wide",
-    initial_sidebar_state="expanded"
+    initial_sidebar_state="collapsed"
 )
 
-# --------------------------------------------------
-# 2. Dark Modern Professional CSS
-# --------------------------------------------------
-st.markdown("""
-<style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
-    
-    html, body, [class*="css"] {
-        font-family: 'Inter', sans-serif;
-    }
-    
+# =========================================================
+# 2. CUSTOM CSS — MODERN HEALTHCARE DESIGN
+# =========================================================
+
+st.markdown(
+    """
+    <style>
+    /* Global layout */
     .stApp {
-        background: #0a0a0f;
-        color: #e2e8f0;
+        background-color: #F5F8FC;
+        color: #172B4D;
     }
-    
-    /* Hide default Streamlit branding */
-    #MainMenu, footer, header {visibility: hidden;}
-    
-    /* ===== SIDEBAR - HIGHLY VISIBLE ===== */
-    [data-testid="stSidebar"] {
-        background: #111118 !important;
-        border-right: 1px solid #2a2a3a;
-        min-width: 280px !important;
+
+    [data-testid="stHeader"] {
+        background-color: rgba(245, 248, 252, 0.95);
     }
-    
-    [data-testid="stSidebar"] > div:first-child {
-        padding-top: 1.5rem;
+
+    .block-container {
+        max-width: 1440px;
+        padding-top: 1.3rem;
+        padding-bottom: 3rem;
     }
-    
-    /* Radio button styling - make it look like a real menu */
-    div[data-testid="stSidebar"] .stRadio > div {
-        gap: 0.4rem;
+
+    /* Typography */
+    h1, h2, h3 {
+        color: #142D4E !important;
+        letter-spacing: -0.5px;
     }
-    
-    div[data-testid="stSidebar"] .stRadio label {
-        background: #1a1a25 !important;
-        border: 1px solid #2a2a3a !important;
-        border-radius: 10px !important;
-        padding: 0.85rem 1rem !important;
-        margin-bottom: 0.35rem !important;
-        font-size: 0.95rem !important;
-        font-weight: 500 !important;
-        color: #cbd5e1 !important;
-        transition: all 0.2s ease !important;
-        cursor: pointer;
+
+    p, label, span {
+        line-height: 1.6;
     }
-    
-    div[data-testid="stSidebar"] .stRadio label:hover {
-        background: #22222f !important;
-        border-color: #3f3f5a !important;
-        color: #f1f5f9 !important;
-    }
-    
-    /* Active / selected state */
-    div[data-testid="stSidebar"] .stRadio label[data-baseweb="radio"] > div:first-child {
-        background-color: #ef4444 !important;
-    }
-    
-    /* ===== CARDS ===== */
-    .glass-card {
-        background: rgba(20, 20, 30, 0.75);
-        backdrop-filter: blur(12px);
-        border: 1px solid rgba(255, 255, 255, 0.07);
-        border-radius: 16px;
-        padding: 1.6rem;
-        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35);
-    }
-    
-    .metric-box {
-        background: linear-gradient(145deg, #14141f, #1a1a28);
-        border: 1px solid #2a2a3a;
-        border-radius: 14px;
-        padding: 1.5rem 1rem;
-        text-align: center;
-        transition: all 0.25s ease;
-    }
-    
-    .metric-box:hover {
-        transform: translateY(-4px);
-        border-color: #ef4444;
-        box-shadow: 0 10px 25px rgba(239, 68, 68, 0.15);
-    }
-    
-    .metric-value {
-        font-size: 1.9rem;
-        font-weight: 700;
-        background: linear-gradient(90deg, #f87171, #ef4444);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        margin: 0;
-    }
-    
-    .metric-label {
-        font-size: 0.78rem;
-        color: #94a3b8;
-        margin-top: 0.35rem;
-        letter-spacing: 0.6px;
-        text-transform: uppercase;
-    }
-    
-    /* ===== RESULT CARDS ===== */
-    .result-danger {
-        background: linear-gradient(135deg, rgba(127, 29, 29, 0.3), rgba(153, 27, 27, 0.15));
-        border: 1px solid #7f1d1d;
-        border-left: 6px solid #ef4444;
-        border-radius: 14px;
-        padding: 1.8rem;
-        margin: 1.3rem 0;
-    }
-    
-    .result-safe {
-        background: linear-gradient(135deg, rgba(6, 78, 59, 0.3), rgba(4, 120, 87, 0.15));
-        border: 1px solid #065f46;
-        border-left: 6px solid #10b981;
-        border-radius: 14px;
-        padding: 1.8rem;
-        margin: 1.3rem 0;
-    }
-    
-    /* ===== SECTION TITLE ===== */
-    .section-title {
-        font-size: 1.1rem;
-        font-weight: 600;
-        color: #f1f5f9;
-        margin: 1.6rem 0 1rem 0;
+
+    /* Top navigation brand */
+    .brand {
         display: flex;
         align-items: center;
-        gap: 0.6rem;
+        gap: 12px;
+        margin-bottom: 8px;
     }
-    
-    .section-title::before {
-        content: "";
-        width: 4px;
-        height: 18px;
-        background: #ef4444;
-        border-radius: 2px;
-    }
-    
-    /* ===== BUTTON ===== */
-    .stButton > button {
-        background: linear-gradient(90deg, #dc2626, #b91c1c) !important;
-        color: white !important;
-        border: none !important;
-        border-radius: 10px !important;
-        padding: 0.8rem 1.8rem !important;
-        font-weight: 600 !important;
-        font-size: 1rem !important;
-        transition: all 0.25s ease !important;
-        box-shadow: 0 4px 18px rgba(220, 38, 38, 0.3);
-    }
-    
-    .stButton > button:hover {
-        background: linear-gradient(90deg, #ef4444, #dc2626) !important;
-        box-shadow: 0 8px 25px rgba(239, 68, 68, 0.45) !important;
-        transform: translateY(-2px);
-    }
-    
-    /* ===== INPUTS ===== */
-    .stNumberInput input, .stSelectbox div[data-baseweb="select"] > div {
-        background-color: #14141f !important;
-        border: 1px solid #2a2a3a !important;
-        border-radius: 8px !important;
-        color: #e2e8f0 !important;
-    }
-    
-    /* ===== FOOTER ===== */
-    .custom-footer {
-        text-align: center;
-        color: #4b5563;
-        font-size: 0.78rem;
-        padding: 2.5rem 0 1rem 0;
-        letter-spacing: 0.8px;
-    }
-    
-    h1, h2, h3 {
-        color: #f8fafc !important;
-    }
-</style>
-""", unsafe_allow_html=True)
 
-# --------------------------------------------------
-# 3. Load Model
-# --------------------------------------------------
+    .brand-icon {
+        background: #DDF7F0;
+        color: #087F70;
+        border-radius: 14px;
+        padding: 10px 13px;
+        font-size: 27px;
+    }
+
+    .brand-name {
+        font-size: 24px;
+        font-weight: 800;
+        color: #142D4E;
+        line-height: 1.2;
+    }
+
+    .brand-subtitle {
+        color: #718198;
+        font-size: 12px;
+    }
+
+    /* Hero section */
+    .hero {
+        background: linear-gradient(115deg, #12365A, #087F8C);
+        color: white;
+        padding: 36px;
+        border-radius: 22px;
+        margin: 18px 0 24px 0;
+    }
+
+    .hero h1 {
+        color: white !important;
+        font-size: clamp(28px, 4vw, 42px);
+        margin-bottom: 12px;
+    }
+
+    .hero p {
+        color: #E2F4F7;
+        font-size: 16px;
+        max-width: 760px;
+    }
+
+    .hero-tag {
+        display: inline-block;
+        background: rgba(255,255,255,0.14);
+        color: #E8FFFA;
+        padding: 6px 12px;
+        border-radius: 30px;
+        font-size: 12px;
+        margin-bottom: 15px;
+        border: 1px solid rgba(255,255,255,0.22);
+    }
+
+    /* Cards */
+    .panel {
+        background: #FFFFFF;
+        border: 1px solid #E5ECF4;
+        border-radius: 18px;
+        padding: 23px;
+        margin-bottom: 18px;
+        box-shadow: 0 5px 20px rgba(25, 55, 90, 0.035);
+    }
+
+    .panel-title {
+        font-size: 19px;
+        font-weight: 750;
+        color: #142D4E;
+        margin-bottom: 5px;
+    }
+
+    .muted {
+        color: #718198;
+        font-size: 13px;
+    }
+
+    /* Metrics */
+    .metric-card {
+        background: white;
+        border: 1px solid #E5ECF4;
+        border-radius: 16px;
+        padding: 20px;
+        min-height: 115px;
+        box-shadow: 0 4px 16px rgba(25,55,90,0.025);
+    }
+
+    .metric-label {
+        color: #718198;
+        font-size: 13px;
+        margin-bottom: 8px;
+    }
+
+    .metric-value {
+        color: #142D4E;
+        font-size: 28px;
+        font-weight: 800;
+    }
+
+    .metric-note {
+        color: #087F70;
+        font-size: 12px;
+        margin-top: 4px;
+    }
+
+    /* Notice */
+    .notice {
+        background: #FFF8E8;
+        border: 1px solid #F1D9A8;
+        border-radius: 12px;
+        padding: 15px 18px;
+        color: #77531A;
+        font-size: 13px;
+        margin: 16px 0 22px 0;
+    }
+
+    /* Result panels */
+    .result-positive {
+        background: #FFF1F0;
+        border: 1px solid #F3C5C1;
+        border-radius: 16px;
+        padding: 24px;
+    }
+
+    .result-negative {
+        background: #EAF8F2;
+        border: 1px solid #B8E5D1;
+        border-radius: 16px;
+        padding: 24px;
+    }
+
+    .result-title {
+        font-size: 22px;
+        font-weight: 800;
+        margin-bottom: 8px;
+    }
+
+    /* Form fields */
+    div[data-baseweb="input"] > div,
+    div[data-baseweb="select"] > div {
+        border-radius: 9px;
+        border-color: #D9E3EF;
+        background-color: white;
+    }
+
+    div[data-testid="stForm"] {
+        background: white;
+        border: 1px solid #E5ECF4;
+        border-radius: 18px;
+        padding: 24px;
+    }
+
+    /* Buttons */
+    .stButton > button,
+    div[data-testid="stFormSubmitButton"] > button {
+        background: #087F70;
+        color: white;
+        border: 1px solid #087F70;
+        border-radius: 10px;
+        font-weight: 700;
+        min-height: 45px;
+        transition: 0.2s ease;
+    }
+
+    .stButton > button:hover,
+    div[data-testid="stFormSubmitButton"] > button:hover {
+        background: #06695E;
+        color: white;
+        border-color: #06695E;
+    }
+
+    /* Navigation radio */
+    div[data-testid="stRadio"] > div {
+        gap: 8px;
+    }
+
+    div[data-testid="stRadio"] label {
+        background: white;
+        border: 1px solid #E2EAF3;
+        border-radius: 9px;
+        padding: 8px 15px;
+        margin-bottom: 5px;
+    }
+
+    /* Footer */
+    .footer {
+        border-top: 1px solid #E2EAF3;
+        margin-top: 40px;
+        padding-top: 20px;
+        color: #718198;
+        font-size: 12px;
+        text-align: center;
+    }
+
+    /* Small screens */
+    @media (max-width: 768px) {
+        .block-container {
+            padding: 1rem 1rem 2rem 1rem;
+        }
+
+        .hero {
+            padding: 24px;
+        }
+
+        .panel {
+            padding: 17px;
+        }
+
+        .metric-card {
+            padding: 14px;
+        }
+
+        .metric-value {
+            font-size: 23px;
+        }
+    }
+    </style>
+    """,
+    unsafe_allow_html=True
+)
+
+# =========================================================
+# 3. MODEL LOADING
+# =========================================================
+
 MODEL_PATH = Path(__file__).parent / "heart_disease_model.pkl"
+
 
 @st.cache_resource
 def load_model():
     return joblib.load(MODEL_PATH)
 
+
 try:
     model = load_model()
-except Exception as e:
-    st.error("Failed to load model. Make sure `heart_disease_model.pkl` is in the same folder.")
-    st.caption(str(e))
+
+except Exception:
+    st.error(
+        "The trained model could not be loaded. "
+        "Ensure heart_disease_model.pkl is in the same "
+        "directory as app.py and that the file is valid."
+    )
+    st.info(
+        "Check your repository structure and the model "
+        "file's name. Review deployment logs for details."
+    )
     st.stop()
 
-# --------------------------------------------------
-# 4. SIDEBAR - CLEAR NAVIGATION
-# --------------------------------------------------
-with st.sidebar:
-    st.markdown("""
-        <div style="text-align: center; padding-bottom: 1.5rem;">
-            <div style="font-size: 2.4rem; margin-bottom: 0.3rem;">❤️</div>
-            <div style="font-size: 1.4rem; font-weight: 700; color: #f8fafc; letter-spacing: -0.5px;">
-                HeartGuard AI
-            </div>
-            <div style="font-size: 0.72rem; color: #64748b; margin-top: 4px; letter-spacing: 1px;">
-                CLINICAL DECISION SUPPORT
-            </div>
+# =========================================================
+# 4. REUSABLE UI HELPERS
+# =========================================================
+
+def metric_card(label, value, note="Model evaluation"):
+    st.markdown(
+        f"""
+        <div class="metric-card">
+            <div class="metric-label">{label}</div>
+            <div class="metric-value">{value}</div>
+            <div class="metric-note">{note}</div>
         </div>
-    """, unsafe_allow_html=True)
-    
-    st.markdown("### Navigation")
-    
-    page = st.radio(
-        "Go to",
-        options=[
-            "📊  Dashboard",
-            "🔬  Prediction",
-            "📈  Model Performance",
-            "ℹ️  About"
-        ],
-        label_visibility="collapsed"
+        """,
+        unsafe_allow_html=True
     )
-    
-    st.markdown("---")
-    
-    st.markdown("""
-        <div style="font-size: 0.82rem; color: #94a3b8; line-height: 1.7;">
-            <div style="color:#64748b; font-size:0.75rem; margin-bottom:4px;">ACTIVE MODEL</div>
-            <strong style="color:#e2e8f0;">Random Forest</strong><br><br>
-            <div style="color:#64748b; font-size:0.75rem; margin-bottom:4px;">TEST ACCURACY</div>
-            <strong style="color:#f87171;">85.00%</strong>
+
+
+def section_heading(title, description):
+    st.markdown(
+        f"""
+        <div style="margin: 10px 0 20px 0;">
+            <div style="font-size:27px;font-weight:800;color:#142D4E;">
+                {title}
+            </div>
+            <div style="color:#718198;font-size:14px;margin-top:5px;">
+                {description}
+            </div>
         </div>
-    """, unsafe_allow_html=True)
-    
-    st.markdown("<br>", unsafe_allow_html=True)
-    st.caption("Educational use only • Not a medical device")
+        """,
+        unsafe_allow_html=True
+    )
 
-# Clean page name (remove emoji for logic)
-page_clean = page.split("  ")[-1].strip() if "  " in page else page
 
-# --------------------------------------------------
-# 5. DASHBOARD
-# --------------------------------------------------
-if page_clean == "Dashboard":
-    st.markdown("# HeartGuard AI")
-    st.markdown("##### Advanced clinical decision support powered by Random Forest")
-    
-    st.markdown("<br>", unsafe_allow_html=True)
-    
-    col1, col2, col3, col4 = st.columns(4)
-    
-    with col1:
-        st.markdown("""
-            <div class="metric-box">
-                <div class="metric-value">85.0%</div>
-                <div class="metric-label">Accuracy</div>
+def render_footer():
+    st.markdown(
+        """
+        <div class="footer">
+            <strong>CardioSense AI</strong> · Heart Disease Classification
+            <br>
+            Research demonstration · UCI Machine Learning Repository
+            <br>
+            This tool is not intended for medical diagnosis or treatment.
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
+
+# =========================================================
+# 5. NAVIGATION BAR
+# =========================================================
+
+header_left, header_right = st.columns([3, 1])
+
+with header_left:
+    st.markdown(
+        """
+        <div class="brand">
+            <div class="brand-icon">♥</div>
+            <div>
+                <div class="brand-name">CardioSense AI</div>
+                <div class="brand-subtitle">
+                    MACHINE LEARNING RESEARCH DASHBOARD
+                </div>
             </div>
-        """, unsafe_allow_html=True)
-    with col2:
-        st.markdown("""
-            <div class="metric-box">
-                <div class="metric-value">88.0%</div>
-                <div class="metric-label">Precision</div>
-            </div>
-        """, unsafe_allow_html=True)
-    with col3:
-        st.markdown("""
-            <div class="metric-box">
-                <div class="metric-value">78.6%</div>
-                <div class="metric-label">Recall</div>
-            </div>
-        """, unsafe_allow_html=True)
-    with col4:
-        st.markdown("""
-            <div class="metric-box">
-                <div class="metric-value">94.1%</div>
-                <div class="metric-label">ROC-AUC</div>
-            </div>
-        """, unsafe_allow_html=True)
-    
-    st.markdown("<br><br>", unsafe_allow_html=True)
-    
-    left, right = st.columns(2)
-    
-    with left:
-        st.markdown("""
-            <div class="glass-card">
-                <h3 style="margin-top:0;">About the System</h3>
-                <p style="color:#94a3b8; line-height:1.7;">
-                    HeartGuard AI uses a carefully tuned Random Forest model trained on the 
-                    classic UCI Heart Disease dataset. It analyzes 13 clinical parameters 
-                    to provide a binary classification of heart disease presence.
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
+with header_right:
+    st.markdown(
+        """
+        <div style="text-align:right;padding-top:12px;">
+            <span style="
+                background:#DDF7F0;
+                color:#087F70;
+                padding:8px 12px;
+                border-radius:20px;
+                font-size:12px;
+                font-weight:700;">
+                ● Research Demo
+            </span>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
+page = st.radio(
+    "Main navigation",
+    [
+        "Overview",
+        "Classifier",
+        "Model Performance",
+        "About"
+    ],
+    horizontal=True,
+    label_visibility="collapsed",
+    key="main_navigation"
+)
+
+st.divider()
+
+# =========================================================
+# 6. SHARED INTRODUCTION
+# =========================================================
+
+st.markdown(
+    """
+    <div class="notice">
+        <strong>Educational use only.</strong>
+        This application produces experimental machine-learning
+        classifications. It is not a validated clinical diagnostic
+        tool and must not be used to make medical decisions.
+    </div>
+    """,
+    unsafe_allow_html=True
+)
+
+# =========================================================
+# 7. OVERVIEW PAGE
+# =========================================================
+
+if page == "Overview":
+
+    st.markdown(
+        """
+        <div class="hero">
+            <div class="hero-tag">HEALTHCARE × ARTIFICIAL INTELLIGENCE</div>
+            <h1>Heart Disease Classification</h1>
+            <p>
+                Explore a machine-learning research project that
+                classifies the presence or absence of heart disease
+                from 13 clinical features using a trained Random
+                Forest model.
+            </p>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
+    section_heading(
+        "Model at a glance",
+        "Evaluation results from the selected model's test set."
+    )
+
+    row1 = st.columns(4)
+
+    with row1[0]:
+        metric_card("Accuracy", "85.00%", "Test set")
+
+    with row1[1]:
+        metric_card("Precision", "88.00%", "Test set")
+
+    with row1[2]:
+        metric_card("Recall", "78.57%", "Test set")
+
+    with row1[3]:
+        metric_card("F1-score", "83.02%", "Test set")
+
+    st.write("")
+
+    row2 = st.columns([1.1, 1])
+
+    with row2[0]:
+        st.markdown(
+            """
+            <div class="panel">
+                <div class="panel-title">Selected model</div>
+                <h2 style="margin-top:15px;">Random Forest</h2>
+                <p class="muted">
+                    An ensemble learning algorithm that combines
+                    multiple decision trees to produce a classification.
                 </p>
+                <hr style="border-color:#E5ECF4;">
+                <p><strong>Input features</strong> · 13</p>
+                <p><strong>Task</strong> · Binary classification</p>
+                <p><strong>Dataset</strong> · UCI Heart Disease</p>
+                <p><strong>Framework</strong> · Scikit-learn / Streamlit</p>
             </div>
-        """, unsafe_allow_html=True)
-    
-    with right:
-        st.markdown("""
-            <div class="glass-card">
-                <h3 style="margin-top:0;">Important Notice</h3>
-                <p style="color:#94a3b8; line-height:1.7;">
-                    This application is designed strictly for educational and research purposes. 
-                    It is <strong style="color:#f87171;">not a medical diagnostic tool</strong> and must never 
-                    be used to make clinical decisions.
-                </p>
-            </div>
-        """, unsafe_allow_html=True)
+            """,
+            unsafe_allow_html=True
+        )
 
-# --------------------------------------------------
-# 6. PREDICTION
-# --------------------------------------------------
-elif page_clean == "Prediction":
-    st.markdown("# Clinical Prediction")
-    st.markdown("Enter patient clinical parameters. All values follow the original UCI Heart Disease coding.")
-    
-    with st.form("prediction_form"):
-        
-        st.markdown('<div class="section-title">Patient Demographics & Vitals</div>', unsafe_allow_html=True)
-        
-        c1, c2, c3 = st.columns(3)
-        
-        with c1:
-            age = st.number_input("Age (years)", 1, 120, 54)
-            sex = st.selectbox("Sex", [0, 1], format_func=lambda x: "Female" if x == 0 else "Male")
-            trestbps = st.number_input("Resting BP (mm Hg)", 50, 300, 130)
-        
-        with c2:
-            chol = st.number_input("Serum Cholesterol (mg/dl)", 50, 700, 250)
-            fbs = st.selectbox("Fasting Blood Sugar > 120 mg/dl", [0, 1],
-                               format_func=lambda x: "No" if x == 0 else "Yes")
-            thalach = st.number_input("Max Heart Rate Achieved", 50, 250, 150)
-        
-        with c3:
-            oldpeak = st.number_input("ST Depression (oldpeak)", 0.0, 10.0, 1.0, 0.1)
-            exang = st.selectbox("Exercise Induced Angina", [0, 1],
-                                 format_func=lambda x: "No" if x == 0 else "Yes")
-            restecg = st.selectbox("Resting ECG", [0, 1, 2],
-                                   format_func=lambda x: {
-                                       0: "Normal", 1: "ST-T Abnormality", 2: "LV Hypertrophy"
-                                   }[x])
-        
-        st.markdown('<div class="section-title">Advanced Clinical Features</div>', unsafe_allow_html=True)
-        
-        c4, c5, c6 = st.columns(3)
-        
-        with c4:
-            cp = st.selectbox("Chest Pain Type", [1, 2, 3, 4],
-                              format_func=lambda x: {
-                                  1: "Typical Angina", 2: "Atypical Angina",
-                                  3: "Non-anginal Pain", 4: "Asymptomatic"
-                              }[x])
-        
-        with c5:
-            slope = st.selectbox("ST Segment Slope", [1, 2, 3],
-                                 format_func=lambda x: {
-                                     1: "Upsloping", 2: "Flat", 3: "Downsloping"
-                                 }[x])
-            ca = st.selectbox("Major Vessels (0-3)", [0, 1, 2, 3])
-        
-        with c6:
-            thal = st.selectbox("Thalassemia", [3, 6, 7],
-                                format_func=lambda x: {
-                                    3: "Normal", 6: "Fixed Defect", 7: "Reversible Defect"
-                                }[x])
-        
-        st.markdown("<br>", unsafe_allow_html=True)
-        submitted = st.form_submit_button("Run Classification", use_container_width=True)
-    
+    with row2[1]:
+        st.markdown(
+            """
+            <div class="panel">
+                <div class="panel-title">Research objectives</div>
+                <p class="muted">
+                    This project demonstrates the application of
+                    supervised machine learning to a clinical dataset.
+                </p>
+                <br>
+                <p>✓ Prepare clinical features for model input</p>
+                <p>✓ Compare classification algorithms</p>
+                <p>✓ Evaluate predictions using classification metrics</p>
+                <p>✓ Demonstrate a simple interactive application</p>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+
+    st.info(
+        "Ready to explore the model? Select Classifier in the "
+        "navigation bar to enter sample feature values."
+    )
+
+# =========================================================
+# 8. CLASSIFIER PAGE
+# =========================================================
+
+elif page == "Classifier":
+
+    section_heading(
+        "Heart Disease Classifier",
+        "Enter feature values using the coding conventions "
+        "of the original UCI dataset."
+    )
+
+    st.markdown(
+        """
+        <div class="panel">
+            <div class="panel-title">Before you begin</div>
+            <div class="muted">
+                Use this form for educational testing and experimentation.
+                Values should follow the original dataset's definitions.
+                They should not be treated as medical measurements or advice.
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
+    with st.form("heart_disease_form", clear_on_submit=False):
+
+        st.markdown("#### 01 · Demographic information")
+        demographic1, demographic2, demographic3 = st.columns(3)
+
+        with demographic1:
+            age = st.number_input(
+                "Age (years)",
+                min_value=1,
+                max_value=120,
+                value=50
+            )
+
+        with demographic2:
+            sex = st.selectbox(
+                "Sex (dataset code)",
+                [0, 1],
+                format_func=lambda x: (
+                    "0 — Female" if x == 0 else "1 — Male"
+                )
+            )
+
+        with demographic3:
+            cp = st.selectbox(
+                "Chest pain type (cp)",
+                [1, 2, 3, 4],
+                format_func=lambda x: f"Category {x}"
+            )
+
+        st.divider()
+
+        st.markdown("#### 02 · Resting measurements")
+        rest1, rest2, rest3 = st.columns(3)
+
+        with rest1:
+            trestbps = st.number_input(
+                "Resting blood pressure (trestbps)",
+                min_value=50,
+                max_value=300,
+                value=120
+            )
+
+        with rest2:
+            chol = st.number_input(
+                "Serum cholesterol (chol)",
+                min_value=50,
+                max_value=700,
+                value=200
+            )
+
+        with rest3:
+            fbs = st.selectbox(
+                "Fasting blood sugar above 120 mg/dl (fbs)",
+                [0, 1],
+                format_func=lambda x: (
+                    "0 — No" if x == 0 else "1 — Yes"
+                )
+            )
+
+        st.divider()
+
+        st.markdown("#### 03 · Cardiac test features")
+        test1, test2, test3 = st.columns(3)
+
+        with test1:
+            restecg = st.selectbox(
+                "Resting ECG result (restecg)",
+                [0, 1, 2],
+                format_func=lambda x: f"Category {x}"
+            )
+
+        with test2:
+            thalach = st.number_input(
+                "Maximum heart rate (thalach)",
+                min_value=50,
+                max_value=250,
+                value=150
+            )
+
+        with test3:
+            exang = st.selectbox(
+                "Exercise-induced angina (exang)",
+                [0, 1],
+                format_func=lambda x: (
+                    "0 — No" if x == 0 else "1 — Yes"
+                )
+            )
+
+        st.divider()
+
+        st.markdown("#### 04 · Additional clinical features")
+        extra1, extra2, extra3, extra4 = st.columns(4)
+
+        with extra1:
+            oldpeak = st.number_input(
+                "ST depression (oldpeak)",
+                min_value=0.0,
+                max_value=10.0,
+                value=1.0,
+                step=0.1
+            )
+
+        with extra2:
+            slope = st.selectbox(
+                "ST segment slope (slope)",
+                [1, 2, 3],
+                format_func=lambda x: f"Category {x}"
+            )
+
+        with extra3:
+            ca = st.selectbox(
+                "Major vessels (ca)",
+                [0, 1, 2, 3],
+                format_func=lambda x: f"{x} vessel(s)"
+            )
+
+        with extra4:
+            thal = st.selectbox(
+                "Thal category (thal)",
+                [3, 6, 7],
+                format_func=lambda x: f"Category {x}"
+            )
+
+        st.write("")
+
+        submitted = st.form_submit_button(
+            "Run Classification →",
+            use_container_width=True
+        )
+
+    # Process submitted input
     if submitted:
-        input_df = pd.DataFrame([[
-            age, sex, cp, trestbps, chol, fbs, restecg,
-            thalach, exang, oldpeak, slope, ca, thal
-        ]], columns=[
-            "age", "sex", "cp", "trestbps", "chol", "fbs", "restecg",
-            "thalach", "exang", "oldpeak", "slope", "ca", "thal"
-        ])
-        
+
+        input_data = pd.DataFrame(
+            [[
+                age,
+                sex,
+                cp,
+                trestbps,
+                chol,
+                fbs,
+                restecg,
+                thalach,
+                exang,
+                oldpeak,
+                slope,
+                ca,
+                thal
+            ]],
+            columns=[
+                "age",
+                "sex",
+                "cp",
+                "trestbps",
+                "chol",
+                "fbs",
+                "restecg",
+                "thalach",
+                "exang",
+                "oldpeak",
+                "slope",
+                "ca",
+                "thal"
+            ]
+        )
+
         try:
-            pred = model.predict(input_df)[0]
-            
-            st.markdown("### Classification Result")
-            
-            if pred == 1:
-                st.markdown("""
-                    <div class="result-danger">
-                        <h2 style="margin:0 0 0.5rem 0; color:#f87171;">⚠ Presence of Heart Disease</h2>
-                        <p style="margin:0; color:#fca5a5; font-size:1.05rem;">
-                            The model indicates a high likelihood of heart disease based on the provided clinical features.
+            prediction = model.predict(input_data)[0]
+
+            st.write("")
+
+            section_heading(
+                "Classification output",
+                "The following is the trained model's output "
+                "for the values entered above."
+            )
+
+            if prediction == 1:
+
+                st.markdown(
+                    """
+                    <div class="result-positive">
+                        <div class="result-title" style="color:#A52A2A;">
+                            Model output: Class 1
+                        </div>
+                        <p style="color:#7F3434;">
+                            The model classified the submitted features
+                            into the dataset's positive class for
+                            heart disease.
                         </p>
                     </div>
-                """, unsafe_allow_html=True)
+                    """,
+                    unsafe_allow_html=True
+                )
+
+            elif prediction == 0:
+
+                st.markdown(
+                    """
+                    <div class="result-negative">
+                        <div class="result-title" style="color:#087F70;">
+                            Model output: Class 0
+                        </div>
+                        <p style="color:#245E54;">
+                            The model classified the submitted features
+                            into the dataset's negative class for
+                            heart disease.
+                        </p>
+                    </div>
+                    """,
+                    unsafe_allow_html=True
+                )
+
             else:
-                st.markdown("""
-                    <div class="result-safe">
-                        <h2 style="margin:0 0 0.5rem 0; color:#34d399;">✓ Absence of Heart Disease</h2>
-                        <p style="margin:0; color:#6ee7b7; font-size:1.05rem;">
-                            The model indicates a low likelihood of heart disease based on the provided clinical features.
-                        </p>
-                    </div>
-                """, unsafe_allow_html=True)
-            
-            st.info("This is an experimental model output for educational purposes only. It is not a medical diagnosis.")
-            
-            with st.expander("View Input Features"):
-                st.dataframe(input_df.T.rename(columns={0: "Value"}), use_container_width=True)
-                
-        except Exception as e:
-            st.error("Prediction failed.")
-            st.caption(str(e))
+                st.warning(
+                    f"The model returned an unexpected class: {prediction}"
+                )
 
-# --------------------------------------------------
-# 7. MODEL PERFORMANCE
-# --------------------------------------------------
-elif page_clean == "Model Performance":
-    st.markdown("# Model Performance")
-    st.markdown("Detailed evaluation metrics on the held-out test set.")
-    
-    st.markdown("<br>", unsafe_allow_html=True)
-    
-    metrics_data = {
-        "Metric": ["Accuracy", "Precision", "Recall", "F1-Score", "F2-Score", "ROC-AUC"],
-        "Value": ["85.00%", "88.00%", "78.57%", "83.02%", "80.29%", "94.08%"]
-    }
-    
-    st.dataframe(pd.DataFrame(metrics_data), use_container_width=True, hide_index=True)
-    
-    st.markdown("<br>", unsafe_allow_html=True)
-    st.markdown("### Feature Descriptions")
-    
-    features = [
-        ("age", "Age in years"),
-        ("sex", "Biological sex (0 = female, 1 = male)"),
-        ("cp", "Chest pain type (1–4)"),
-        ("trestbps", "Resting blood pressure (mm Hg)"),
-        ("chol", "Serum cholesterol (mg/dl)"),
-        ("fbs", "Fasting blood sugar > 120 mg/dl"),
-        ("restecg", "Resting electrocardiographic results"),
-        ("thalach", "Maximum heart rate achieved"),
-        ("exang", "Exercise-induced angina"),
-        ("oldpeak", "ST depression induced by exercise"),
-        ("slope", "Slope of the peak exercise ST segment"),
-        ("ca", "Number of major vessels (0–3)"),
-        ("thal", "Thalassemia category"),
-    ]
-    
-    st.dataframe(pd.DataFrame(features, columns=["Feature", "Description"]),
-                 use_container_width=True, hide_index=True)
+            st.caption(
+                "This is a machine-learning classification, not a "
+                "medical diagnosis. A result in either class does not "
+                "establish whether a person has or does not have "
+                "heart disease. Seek qualified medical advice for "
+                "health concerns."
+            )
 
-# --------------------------------------------------
-# 8. ABOUT
-# --------------------------------------------------
-elif page_clean == "About":
-    st.markdown("# About HeartGuard AI")
-    
-    st.markdown("""
-    <div class="glass-card">
-        <h3 style="margin-top:0;">Project Overview</h3>
-        <p style="color:#94a3b8; line-height:1.7;">
-            HeartGuard AI is an educational demonstration of a complete machine learning 
-            pipeline for binary classification of heart disease using the UCI Heart Disease dataset.
-        </p>
-        
-        <h3>Models Evaluated</h3>
-        <ul style="color:#94a3b8; line-height:1.8;">
-            <li>Logistic Regression</li>
-            <li><strong style="color:#f87171;">Random Forest Classifier</strong> (Selected)</li>
-            <li>Multi-Layer Perceptron (Neural Network)</li>
-        </ul>
-        
-        <h3>Final Model Performance</h3>
-        <p style="color:#94a3b8;">
-            Test Accuracy: <strong style="color:#f8fafc;">85.00%</strong><br>
-            Test ROC-AUC: <strong style="color:#f8fafc;">94.08%</strong>
-        </p>
-        
-        <h3>Disclaimer</h3>
-        <p style="color:#f87171;">
-            This system is intended solely for educational and research purposes. 
-            It is not a certified medical device and must not be used for real clinical diagnosis.
-        </p>
-    </div>
-    """, unsafe_allow_html=True)
+        except Exception as error:
+            st.error(
+                "Prediction failed. Verify that the input feature "
+                "names, order, and data types match the model used "
+                "during training."
+            )
+            st.exception(error)
 
-# --------------------------------------------------
-# 9. Footer
-# --------------------------------------------------
-st.markdown("""
-    <div class="custom-footer">
-        HEARTGUARD AI  •  EDUCATIONAL DEMONSTRATION  •  UCI HEART DISEASE DATASET  •  RANDOM FOREST
-    </div>
-""", unsafe_allow_html=True)
+# =========================================================
+# 9. MODEL PERFORMANCE PAGE
+# =========================================================
+
+elif page == "Model Performance":
+
+    section_heading(
+        "Model Performance",
+        "Reported evaluation results for the selected Random Forest model."
+    )
+
+    performance1 = st.columns(3)
+
+    with performance1[0]:
+        metric_card("Accuracy", "85.00%", "Correct classifications")
+
+    with performance1[1]:
+        metric_card("Precision", "88.00%", "Positive predictions")
+
+    with performance1[2]:
+        metric_card("Recall", "78.57%", "Actual positive cases detected")
+
+    performance2 = st.columns(3)
+
+    with performance2[0]:
+        metric_card("F1-score", "83.02%", "Precision-recall balance")
+
+    with performance2[1]:
+        metric_card("F2-score", "80.29%", "Greater weight on recall")
+
+    with performance2[2]:
+        metric_card("ROC-AUC", "94.08%", "Discrimination metric")
+
+    st.write("")
+
+    st.markdown(
+        """
+        <div class="panel">
+            <div class="panel-title">Understanding the metrics</div>
+            <p class="muted">
+                Each metric describes a different aspect of model
+                performance. No single metric establishes clinical safety.
+            </p>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
+    with st.expander("Accuracy"):
+        st.write(
+            "The proportion of all test examples that the model "
+            "classified correctly."
+        )
+
+    with st.expander("Precision"):
+        st.write(
+            "Among examples predicted as positive, the proportion "
+            "that were actually positive."
+        )
+
+    with st.expander("Recall"):
+        st.write(
+            "Among actual positive examples, the proportion that "
+            "the model correctly identified."
+        )
+
+    with st.expander("F1-score and F2-score"):
+        st.write(
+            "F1 balances precision and recall. F2 gives more weight "
+            "to recall than precision. Both summarize performance "
+            "using the selected positive class."
+        )
+
+    with st.expander("ROC-AUC"):
+        st.write(
+            "ROC-AUC measures how well the model separates the two "
+            "classes across classification thresholds. It is not "
+            "the same as accuracy or an individual prediction's "
+            "probability of disease."
+        )
+
+    st.warning(
+        "These values are the reported evaluation metrics. Confirm "
+        "they were calculated from the same test split and model "
+        "version used for this deployment. They do not establish "
+        "performance on new populations or in clinical practice."
+    )
+
+# =========================================================
+# 10. ABOUT PAGE
+# =========================================================
+
+elif page == "About":
+
+    section_heading(
+        "About the Project",
+        "A student machine-learning project exploring clinical "
+        "data classification."
+    )
+
+    st.markdown(
+        """
+        <div class="panel">
+            <div class="panel-title">Project overview</div>
+            <p class="muted">
+                This application demonstrates how a trained supervised
+                learning model can classify records from the UCI Heart
+                Disease dataset using 13 input features.
+            </p>
+            <br>
+            <strong>Selected deployment model</strong>
+            <p class="muted">Random Forest Classifier</p>
+            <strong>Dataset source</strong>
+            <p class="muted">UCI Machine Learning Repository</p>
+            <strong>Application framework</strong>
+            <p class="muted">Python, Streamlit, Pandas and Joblib</p>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
+    st.markdown("### Models explored")
+
+    model_col1, model_col2, model_col3 = st.columns(3)
+
+    with model_col1:
+        st.markdown(
+            """
+            <div class="panel">
+                <div class="panel-title">Logistic Regression</div>
+                <p class="muted">
+                    A linear classification algorithm used as a
+                    baseline model.
+                </p>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+
+    with model_col2:
+        st.markdown(
+            """
+            <div class="panel">
+                <div class="panel-title">Random Forest</div>
+                <p class="muted">
+                    An ensemble of decision trees selected for
+                    this demonstration.
+                </p>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+
+    with model_col3:
+        st.markdown(
+            """
+            <div class="panel">
+                <div class="panel-title">Neural Network (MLP)</div>
+                <p class="muted">
+                    A feed-forward neural network explored during
+                    model comparison.
+                </p>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+
+    st.markdown("### Important limitations")
+
+    st.write(
+        "- The application is for educational and research demonstration."
+    )
+    st.write(
+        "- The dataset may not represent every population or clinical setting."
+    )
+    st.write(
+        "- Model performance can change on unseen data."
+    )
+    st.write(
+        "- The model output must not replace professional assessment, "
+        "medical testing, or clinical judgment."
+    )
+
+    st.markdown("### Data and model integrity")
+
+    st.write(
+        "The model's feature order, preprocessing steps, and category "
+        "encodings must match the original training pipeline. This "
+        "application passes the 13 named features directly to the "
+        "saved model; if your training pipeline requires scaling, "
+        "imputation, or other transformations, save and load the "
+        "complete fitted pipeline instead."
+    )
+
+# =========================================================
+# 11. FOOTER
+# =========================================================
+
+render_footer()
