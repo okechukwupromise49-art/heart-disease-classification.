@@ -67,6 +67,8 @@ with st.expander("About this project"):
     st.write("Test precision: 88.00%")
     st.write("Test recall: 78.57%")
     st.write("Test F1-score: 83.02%")
+    st.write("Test F2-score: 80.29%")
+    st.write("Test ROC-AUC: 94.08%")
 
 # --------------------------------------------------
 # 4. Collect the 13 input features
