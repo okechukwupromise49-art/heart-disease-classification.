@@ -18,7 +18,6 @@ st.set_page_config(
 # --------------------------------------------------
 st.markdown("""
 <style>
-    /* ===== GLOBAL ===== */
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
     
     html, body, [class*="css"] {
@@ -30,54 +29,76 @@ st.markdown("""
         color: #e2e8f0;
     }
     
-    /* Hide default Streamlit elements */
+    /* Hide default Streamlit branding */
     #MainMenu, footer, header {visibility: hidden;}
     
-    /* ===== SIDEBAR ===== */
+    /* ===== SIDEBAR - HIGHLY VISIBLE ===== */
     [data-testid="stSidebar"] {
-        background: linear-gradient(180deg, #0f0f17 0%, #15151f 100%);
-        border-right: 1px solid #1e1e2e;
+        background: #111118 !important;
+        border-right: 1px solid #2a2a3a;
+        min-width: 280px !important;
     }
     
-    [data-testid="stSidebar"] * {
+    [data-testid="stSidebar"] > div:first-child {
+        padding-top: 1.5rem;
+    }
+    
+    /* Radio button styling - make it look like a real menu */
+    div[data-testid="stSidebar"] .stRadio > div {
+        gap: 0.4rem;
+    }
+    
+    div[data-testid="stSidebar"] .stRadio label {
+        background: #1a1a25 !important;
+        border: 1px solid #2a2a3a !important;
+        border-radius: 10px !important;
+        padding: 0.85rem 1rem !important;
+        margin-bottom: 0.35rem !important;
+        font-size: 0.95rem !important;
+        font-weight: 500 !important;
         color: #cbd5e1 !important;
+        transition: all 0.2s ease !important;
+        cursor: pointer;
     }
     
-    [data-testid="stSidebar"] .stRadio > label {
-        font-size: 0.95rem;
-        font-weight: 500;
-        padding: 0.6rem 0.8rem;
-        border-radius: 8px;
-        margin-bottom: 4px;
-        transition: all 0.2s ease;
+    div[data-testid="stSidebar"] .stRadio label:hover {
+        background: #22222f !important;
+        border-color: #3f3f5a !important;
+        color: #f1f5f9 !important;
+    }
+    
+    /* Active / selected state */
+    div[data-testid="stSidebar"] .stRadio label[data-baseweb="radio"] > div:first-child {
+        background-color: #ef4444 !important;
     }
     
     /* ===== CARDS ===== */
     .glass-card {
-        background: rgba(20, 20, 30, 0.7);
+        background: rgba(20, 20, 30, 0.75);
         backdrop-filter: blur(12px);
-        border: 1px solid rgba(255, 255, 255, 0.06);
+        border: 1px solid rgba(255, 255, 255, 0.07);
         border-radius: 16px;
-        padding: 1.5rem;
-        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        padding: 1.6rem;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35);
     }
     
     .metric-box {
         background: linear-gradient(145deg, #14141f, #1a1a28);
         border: 1px solid #2a2a3a;
         border-radius: 14px;
-        padding: 1.4rem 1rem;
+        padding: 1.5rem 1rem;
         text-align: center;
-        transition: transform 0.2s ease, border-color 0.2s ease;
+        transition: all 0.25s ease;
     }
     
     .metric-box:hover {
-        transform: translateY(-3px);
+        transform: translateY(-4px);
         border-color: #ef4444;
+        box-shadow: 0 10px 25px rgba(239, 68, 68, 0.15);
     }
     
     .metric-value {
-        font-size: 1.8rem;
+        font-size: 1.9rem;
         font-weight: 700;
         background: linear-gradient(90deg, #f87171, #ef4444);
         -webkit-background-clip: text;
@@ -86,38 +107,38 @@ st.markdown("""
     }
     
     .metric-label {
-        font-size: 0.8rem;
+        font-size: 0.78rem;
         color: #94a3b8;
-        margin-top: 0.3rem;
-        letter-spacing: 0.5px;
+        margin-top: 0.35rem;
+        letter-spacing: 0.6px;
         text-transform: uppercase;
     }
     
     /* ===== RESULT CARDS ===== */
     .result-danger {
-        background: linear-gradient(135deg, rgba(127, 29, 29, 0.25), rgba(153, 27, 27, 0.15));
+        background: linear-gradient(135deg, rgba(127, 29, 29, 0.3), rgba(153, 27, 27, 0.15));
         border: 1px solid #7f1d1d;
-        border-left: 5px solid #ef4444;
+        border-left: 6px solid #ef4444;
         border-radius: 14px;
         padding: 1.8rem;
-        margin: 1.2rem 0;
+        margin: 1.3rem 0;
     }
     
     .result-safe {
-        background: linear-gradient(135deg, rgba(6, 78, 59, 0.25), rgba(4, 120, 87, 0.15));
+        background: linear-gradient(135deg, rgba(6, 78, 59, 0.3), rgba(4, 120, 87, 0.15));
         border: 1px solid #065f46;
-        border-left: 5px solid #10b981;
+        border-left: 6px solid #10b981;
         border-radius: 14px;
         padding: 1.8rem;
-        margin: 1.2rem 0;
+        margin: 1.3rem 0;
     }
     
     /* ===== SECTION TITLE ===== */
     .section-title {
-        font-size: 1.15rem;
+        font-size: 1.1rem;
         font-weight: 600;
         color: #f1f5f9;
-        margin: 1.5rem 0 1rem 0;
+        margin: 1.6rem 0 1rem 0;
         display: flex;
         align-items: center;
         gap: 0.6rem;
@@ -137,17 +158,16 @@ st.markdown("""
         color: white !important;
         border: none !important;
         border-radius: 10px !important;
-        padding: 0.75rem 1.8rem !important;
+        padding: 0.8rem 1.8rem !important;
         font-weight: 600 !important;
         font-size: 1rem !important;
-        letter-spacing: 0.3px;
         transition: all 0.25s ease !important;
-        box-shadow: 0 4px 15px rgba(220, 38, 38, 0.25);
+        box-shadow: 0 4px 18px rgba(220, 38, 38, 0.3);
     }
     
     .stButton > button:hover {
         background: linear-gradient(90deg, #ef4444, #dc2626) !important;
-        box-shadow: 0 6px 20px rgba(239, 68, 68, 0.4) !important;
+        box-shadow: 0 8px 25px rgba(239, 68, 68, 0.45) !important;
         transform: translateY(-2px);
     }
     
@@ -162,19 +182,14 @@ st.markdown("""
     /* ===== FOOTER ===== */
     .custom-footer {
         text-align: center;
-        color: #64748b;
-        font-size: 0.8rem;
-        padding: 2rem 0 1rem 0;
-        letter-spacing: 0.5px;
+        color: #4b5563;
+        font-size: 0.78rem;
+        padding: 2.5rem 0 1rem 0;
+        letter-spacing: 0.8px;
     }
     
-    /* ===== HEADERS ===== */
     h1, h2, h3 {
         color: #f8fafc !important;
-    }
-    
-    .stMarkdown p {
-        color: #94a3b8;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -191,58 +206,65 @@ def load_model():
 try:
     model = load_model()
 except Exception as e:
-    st.error("Failed to load model. Ensure `heart_disease_model.pkl` is present.")
+    st.error("Failed to load model. Make sure `heart_disease_model.pkl` is in the same folder.")
     st.caption(str(e))
     st.stop()
 
 # --------------------------------------------------
-# 4. Sidebar Navigation
+# 4. SIDEBAR - CLEAR NAVIGATION
 # --------------------------------------------------
 with st.sidebar:
     st.markdown("""
-        <div style="text-align:center; padding: 1rem 0 0.5rem 0;">
-            <div style="font-size: 2.2rem;">❤️</div>
-            <div style="font-size: 1.35rem; font-weight: 700; color: #f8fafc; letter-spacing: -0.5px;">
+        <div style="text-align: center; padding-bottom: 1.5rem;">
+            <div style="font-size: 2.4rem; margin-bottom: 0.3rem;">❤️</div>
+            <div style="font-size: 1.4rem; font-weight: 700; color: #f8fafc; letter-spacing: -0.5px;">
                 HeartGuard AI
             </div>
-            <div style="font-size: 0.75rem; color: #64748b; margin-top: 2px;">
+            <div style="font-size: 0.72rem; color: #64748b; margin-top: 4px; letter-spacing: 1px;">
                 CLINICAL DECISION SUPPORT
             </div>
         </div>
     """, unsafe_allow_html=True)
     
-    st.markdown("<br>", unsafe_allow_html=True)
+    st.markdown("### Navigation")
     
     page = st.radio(
-        "NAVIGATION",
-        ["Dashboard", "Prediction", "Model Performance", "About"],
+        "Go to",
+        options=[
+            "📊  Dashboard",
+            "🔬  Prediction",
+            "📈  Model Performance",
+            "ℹ️  About"
+        ],
         label_visibility="collapsed"
     )
     
     st.markdown("---")
     
     st.markdown("""
-        <div style="font-size: 0.8rem; color: #64748b; line-height: 1.6;">
-            <strong style="color:#94a3b8;">Active Model</strong><br>
-            Random Forest Classifier<br><br>
-            <strong style="color:#94a3b8;">Test Accuracy</strong><br>
-            85.00%
+        <div style="font-size: 0.82rem; color: #94a3b8; line-height: 1.7;">
+            <div style="color:#64748b; font-size:0.75rem; margin-bottom:4px;">ACTIVE MODEL</div>
+            <strong style="color:#e2e8f0;">Random Forest</strong><br><br>
+            <div style="color:#64748b; font-size:0.75rem; margin-bottom:4px;">TEST ACCURACY</div>
+            <strong style="color:#f87171;">85.00%</strong>
         </div>
     """, unsafe_allow_html=True)
     
-    st.markdown("<br><br>", unsafe_allow_html=True)
+    st.markdown("<br>", unsafe_allow_html=True)
     st.caption("Educational use only • Not a medical device")
+
+# Clean page name (remove emoji for logic)
+page_clean = page.split("  ")[-1].strip() if "  " in page else page
 
 # --------------------------------------------------
 # 5. DASHBOARD
 # --------------------------------------------------
-if page == "Dashboard":
+if page_clean == "Dashboard":
     st.markdown("# HeartGuard AI")
-    st.markdown("##### Advanced clinical decision support system powered by Random Forest")
+    st.markdown("##### Advanced clinical decision support powered by Random Forest")
     
     st.markdown("<br>", unsafe_allow_html=True)
     
-    # Metrics Row
     col1, col2, col3, col4 = st.columns(4)
     
     with col1:
@@ -252,7 +274,6 @@ if page == "Dashboard":
                 <div class="metric-label">Accuracy</div>
             </div>
         """, unsafe_allow_html=True)
-    
     with col2:
         st.markdown("""
             <div class="metric-box">
@@ -260,7 +281,6 @@ if page == "Dashboard":
                 <div class="metric-label">Precision</div>
             </div>
         """, unsafe_allow_html=True)
-    
     with col3:
         st.markdown("""
             <div class="metric-box">
@@ -268,7 +288,6 @@ if page == "Dashboard":
                 <div class="metric-label">Recall</div>
             </div>
         """, unsafe_allow_html=True)
-    
     with col4:
         st.markdown("""
             <div class="metric-box">
@@ -279,13 +298,12 @@ if page == "Dashboard":
     
     st.markdown("<br><br>", unsafe_allow_html=True)
     
-    # Info cards
     left, right = st.columns(2)
     
     with left:
         st.markdown("""
             <div class="glass-card">
-                <h3 style="margin-top:0; color:#f8fafc;">About the System</h3>
+                <h3 style="margin-top:0;">About the System</h3>
                 <p style="color:#94a3b8; line-height:1.7;">
                     HeartGuard AI uses a carefully tuned Random Forest model trained on the 
                     classic UCI Heart Disease dataset. It analyzes 13 clinical parameters 
@@ -297,21 +315,21 @@ if page == "Dashboard":
     with right:
         st.markdown("""
             <div class="glass-card">
-                <h3 style="margin-top:0; color:#f8fafc;">Important Notice</h3>
+                <h3 style="margin-top:0;">Important Notice</h3>
                 <p style="color:#94a3b8; line-height:1.7;">
                     This application is designed strictly for educational and research purposes. 
                     It is <strong style="color:#f87171;">not a medical diagnostic tool</strong> and must never 
-                    be used to make clinical decisions. Always consult qualified medical professionals.
+                    be used to make clinical decisions.
                 </p>
             </div>
         """, unsafe_allow_html=True)
 
 # --------------------------------------------------
-# 6. PREDICTION PAGE
+# 6. PREDICTION
 # --------------------------------------------------
-elif page == "Prediction":
+elif page_clean == "Prediction":
     st.markdown("# Clinical Prediction")
-    st.markdown("Enter patient clinical parameters below. Values follow UCI Heart Disease coding.")
+    st.markdown("Enter patient clinical parameters. All values follow the original UCI Heart Disease coding.")
     
     with st.form("prediction_form"):
         
@@ -336,9 +354,7 @@ elif page == "Prediction":
                                  format_func=lambda x: "No" if x == 0 else "Yes")
             restecg = st.selectbox("Resting ECG", [0, 1, 2],
                                    format_func=lambda x: {
-                                       0: "Normal",
-                                       1: "ST-T Abnormality",
-                                       2: "LV Hypertrophy"
+                                       0: "Normal", 1: "ST-T Abnormality", 2: "LV Hypertrophy"
                                    }[x])
         
         st.markdown('<div class="section-title">Advanced Clinical Features</div>', unsafe_allow_html=True)
@@ -348,27 +364,21 @@ elif page == "Prediction":
         with c4:
             cp = st.selectbox("Chest Pain Type", [1, 2, 3, 4],
                               format_func=lambda x: {
-                                  1: "Typical Angina",
-                                  2: "Atypical Angina",
-                                  3: "Non-anginal Pain",
-                                  4: "Asymptomatic"
+                                  1: "Typical Angina", 2: "Atypical Angina",
+                                  3: "Non-anginal Pain", 4: "Asymptomatic"
                               }[x])
         
         with c5:
             slope = st.selectbox("ST Segment Slope", [1, 2, 3],
                                  format_func=lambda x: {
-                                     1: "Upsloping",
-                                     2: "Flat",
-                                     3: "Downsloping"
+                                     1: "Upsloping", 2: "Flat", 3: "Downsloping"
                                  }[x])
             ca = st.selectbox("Major Vessels (0-3)", [0, 1, 2, 3])
         
         with c6:
             thal = st.selectbox("Thalassemia", [3, 6, 7],
                                 format_func=lambda x: {
-                                    3: "Normal",
-                                    6: "Fixed Defect",
-                                    7: "Reversible Defect"
+                                    3: "Normal", 6: "Fixed Defect", 7: "Reversible Defect"
                                 }[x])
         
         st.markdown("<br>", unsafe_allow_html=True)
@@ -419,7 +429,7 @@ elif page == "Prediction":
 # --------------------------------------------------
 # 7. MODEL PERFORMANCE
 # --------------------------------------------------
-elif page == "Model Performance":
+elif page_clean == "Model Performance":
     st.markdown("# Model Performance")
     st.markdown("Detailed evaluation metrics on the held-out test set.")
     
@@ -433,7 +443,6 @@ elif page == "Model Performance":
     st.dataframe(pd.DataFrame(metrics_data), use_container_width=True, hide_index=True)
     
     st.markdown("<br>", unsafe_allow_html=True)
-    
     st.markdown("### Feature Descriptions")
     
     features = [
@@ -452,13 +461,13 @@ elif page == "Model Performance":
         ("thal", "Thalassemia category"),
     ]
     
-    st.dataframe(pd.DataFrame(features, columns=["Feature", "Description"]), 
+    st.dataframe(pd.DataFrame(features, columns=["Feature", "Description"]),
                  use_container_width=True, hide_index=True)
 
 # --------------------------------------------------
 # 8. ABOUT
 # --------------------------------------------------
-elif page == "About":
+elif page_clean == "About":
     st.markdown("# About HeartGuard AI")
     
     st.markdown("""
@@ -485,7 +494,7 @@ elif page == "About":
         <h3>Disclaimer</h3>
         <p style="color:#f87171;">
             This system is intended solely for educational and research purposes. 
-            It is not a certified medical device and must not be used for real clinical diagnosis or treatment decisions.
+            It is not a certified medical device and must not be used for real clinical diagnosis.
         </p>
     </div>
     """, unsafe_allow_html=True)
